@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="uz" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>7-A Sinf Interaktiv Dashboard & Tanlov Tizimi</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .active-card {
+      border-color: #3b82f6 !important;
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(37, 99, 235, 0.2)) !important;
+      transform: scale(1.06);
+      box-shadow: 0 0 25px rgba(59, 130, 246, 0.6);
+      z-index: 20;
+    }
+    .selected-winner {
+      border-color: #10b981 !important;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.35), rgba(5, 150, 105, 0.25)) !important;
+      transform: scale(1.1);
+      box-shadow: 0 0 35px rgba(16, 185, 129, 0.8);
+      z-index: 30;
+    }
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between font-sans selection:bg-blue-500 selection:text-white touch-manipulation">
+
+  <!-- Header -->
+  <header class="py-4 px-4 sm:px-8 border-b border-slate-800/80 glass-panel sticky top-0 z-40 flex flex-col md:flex-row justify-between items-center gap-4">
+    <div class="flex items-center gap-3.5 w-full md:w-auto justify-between md:justify-start">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-emerald-500 flex items-center justify-center shadow-lg shadow-blue-500/25 shrink-0">
+          <i class="fa-solid fa-graduation-cap text-white text-2xl"></i>
+        </div>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-blue-400 via-indigo-300 to-emerald-400 bg-clip-text text-transparent">
+            7-A Sinf Dashboard
+          </h1>
+          <p class="text-xs text-slate-400">Aqlli baholash va tasodifiy tanlov tizimi</p>
+        </div>
+      </div>
+      
+      <!-- Ovozli o'qish rejimi toggle -->
+      <button onclick="toggleVoice()" id="voiceBtn" class="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 transition-all text-xs flex items-center gap-2">
+        <i class="fa-solid fa-volume-high text-emerald-400" id="voiceIcon"></i>
+        <span class="hidden sm:inline">Ovoz: Yoqilgan</span>
+      </button>
+    </div>
+
+    <!-- Boshqaruv tugmalari va Rejimlar -->
+    <div class="flex flex-wrap items-center gap-2.5 text-xs font-medium w-full md:w-auto justify-center">
+      <label class="flex items-center gap-2 cursor-pointer select-none bg-slate-900/90 border border-slate-800 px-3.5 py-2 rounded-xl hover:border-slate-700 transition-colors">
+        <input type="checkbox" id="noRepeatToggle" class="w-4 h-4 accent-blue-500 rounded cursor-pointer" onchange="toggleNoRepeat()">
+        <span class="text-slate-300">Qayta tanlamaslik</span>
+      </label>
+
+      <button onclick="resetDisabled()" class="bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 active:scale-95">
+        <i class="fa-solid fa-rotate"></i>
+        <span>Muzlatilganlarni tiklash</span>
+      </button>
+
+      <button onclick="resetScores()" class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 active:scale-95">
+        <i class="fa-solid fa-trash-can"></i>
+        <span>Ballarni nol qilish</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-8 py-6 flex-grow w-full space-y-6">
+
+    <!-- Analytics / Statistik Metrikalar (Top 3 & Sinf O'rtacha Balli) -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="glass-panel p-4 rounded-2xl flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 text-xl shrink-0">
+          <i class="fa-solid fa-chart-line"></i>
+        </div>
+        <div>
+          <p class="text-xs text-slate-400 font-medium">Sinf O'rtacha Balli</p>
+          <h3 class="text-xl font-bold text-white" id="avgScore">0.0</h3>
+        </div>
+      </div>
+
+      <div class="glass-panel p-4 rounded-2xl flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 text-xl shrink-0">
+          <i class="fa-solid fa-trophy"></i>
+        </div>
+        <div>
+          <p class="text-xs text-slate-400 font-medium">Top O'quvchi</p>
+          <h3 class="text-sm font-bold text-emerald-400 truncate max-w-[180px]" id="topStudent">-</h3>
+        </div>
+      </div>
+
+      <div class="glass-panel p-4 rounded-2xl flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 text-xl shrink-0">
+          <i class="fa-solid fa-user-check"></i>
+        </div>
+        <div>
+          <p class="text-xs text-slate-400 font-medium">Bugun Javob Berdi</p>
+          <h3 class="text-xl font-bold text-white" id="answeredStats">0 / 31</h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- G'olib haqida banner va baholash -->
+    <div id="winnerBanner" class="hidden p-6 glass-panel border-2 border-emerald-500/50 rounded-3xl text-center shadow-2xl space-y-4 animate-fade-in relative overflow-hidden">
+      <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      
+      <p class="text-emerald-400 font-semibold text-base sm:text-xl">
+        🎉 Bugungi javob beruvchi: <span id="winnerName" class="font-extrabold text-white text-2xl sm:text-4xl underline ml-2"></span>
+      </p>
+
+      <!-- Ustoz uchun ballar paneli -->
+      <div class="pt-3 border-t border-slate-800 max-w-2xl mx-auto">
+        <p class="text-xs sm:text-sm text-slate-300 mb-3 font-medium">O'quvchini baholang (1 - 10 ball):</p>
+        <div class="flex flex-wrap justify-center gap-2">
+          <script>
+            for(let i=1; i<=10; i++){
+              document.write(`
+                <button onclick="setScore(${i})" class="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-slate-800/90 hover:bg-emerald-600 active:bg-emerald-700 text-white font-bold text-sm sm:text-base border border-slate-700/80 transition-all shadow-md active:scale-95">
+                  ${i}
+                </button>
+              `);
+            }
+          </script>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter va Qidiruv Paneli -->
+    <div class="flex flex-col sm:flex-row justify-between items-center gap-3 glass-panel p-3.5 rounded-2xl">
+      <!-- Search Input -->
+      <div class="relative w-full sm:w-72">
+        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+        <input 
+          type="text" 
+          id="searchInput" 
+          oninput="renderStudents()" 
+          placeholder="O'quvchi ismini qidirish..." 
+          class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-9 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+        />
+      </div>
+
+      <!-- Sort Options -->
+      <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
+        <span class="text-xs text-slate-400 font-medium hidden sm:inline">Saralash:</span>
+        <select id="sortSelect" onchange="renderStudents()" class="bg-slate-900 border border-slate-800 text-xs text-slate-300 rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500">
+          <option value="default">Odatiy tartib</option>
+          <option value="score-desc">Ballari bo'yicha (Yuqoridan)</option>
+          <option value="score-asc">Ballari bo'yicha (Pastdan)</option>
+          <option value="name-asc">Ismi bo'yicha (A-Z)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- O'quvchilar ro'yxati Grid -->
+    <div id="studentsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+      <!-- JS orqali to'ldiriladi -->
+    </div>
+
+  </main>
+
+  <!-- Touchpad & Asosiy Tanlov Tugmasi -->
+  <footer class="py-4 border-t border-slate-800/80 glass-panel sticky bottom-0 z-40 text-center px-4">
+    <div class="max-w-md mx-auto flex flex-col items-center gap-2">
+      <button 
+        id="pickBtn" 
+        onclick="pickRandomStudent()"
+        class="w-full py-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 text-white font-bold text-lg rounded-2xl shadow-xl shadow-blue-500/25 transition-all duration-150 flex items-center justify-center gap-3 border border-blue-400/30 cursor-pointer select-none active:scale-95">
+        <i class="fa-solid fa-shuffle text-xl"></i>
+        <span>TASODIFIY TANLASH</span>
+      </button>
+      <p class="text-[11px] text-slate-500 hidden sm:block">Klaviaturadagi <span class="bg-slate-800 px-2 py-0.5 rounded border border-slate-700 text-slate-300">Space / Probel</span> tugmasini bosing</p>
+    </div>
+  </footer>
+
+  <!-- Modal Oyna: O'quvchi ma'lumotlari -->
+  <div id="studentModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-5 relative">
+      <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-2">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+
+      <div class="flex items-center gap-4">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-emerald-500 flex items-center justify-center text-white text-2xl font-bold">
+          <span id="modalAvatar">A</span>
+        </div>
+        <div>
+          <h3 id="modalName" class="text-xl font-bold text-white">O'quvchi Ismi</h3>
+          <p class="text-xs text-slate-400">7-A sinf o'quvchisi</p>
+        </div>
+      </div>
+
+      <div class="bg-slate-950/60 rounded-2xl p-4 border border-slate-800/80 space-y-3">
+        <div class="flex justify-between items-center text-sm">
+          <span class="text-slate-400">Hozirgi balli:</span>
+          <span id="modalScore" class="font-bold text-emerald-400 text-lg">0 ball</span>
+        </div>
+        <div class="flex justify-between items-center text-sm">
+          <span class="text-slate-400">Holati:</span>
+          <span id="modalStatus" class="font-medium text-slate-300">Faol</span>
+        </div>
+      </div>
+
+      <div class="flex gap-2">
+        <button onclick="removeScoreFromModal()" class="flex-1 py-2.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-semibold transition-all">
+          Ballni o'chirish
+        </button>
+        <button onclick="closeModal()" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold transition-all">
+          Yopish
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const students = [
+      "Sardorbek", "Gulnora", "Lobar", "Abdulloh", "Saidakbar", "Dilmurod", 
+      "Muhammad Yusuf", "Marifat", "Xanifa", "Mubina", "Bibisora", "Nozima", 
+      "Muslima", "Sarvar", "Abdulatif", "Otabek B", "Otabek I", "Muhammad Ali B", 
+      "Muhammad Ali R", "Kumush", "Abdurasul", "Nursulton", "Umid", "Sherzod", 
+      "Asadbek", "Siroj", "Asilbek", "Jasur", "Abduqodir", "Zafar", "Burxoniddin"
+    ];
+
+    let disabledStudents = JSON.parse(localStorage.getItem('7a_disabled_students')) || [];
+    let noRepeatMode = JSON.parse(localStorage.getItem('7a_no_repeat_mode')) || false;
+    let studentScores = JSON.parse(localStorage.getItem('7a_student_scores')) || {};
+    let voiceEnabled = JSON.parse(localStorage.getItem('7a_voice_enabled')) ?? true;
+
+    let currentWinnerName = "";
+    let selectedStudentForModal = "";
+
+    const grid = document.getElementById('studentsGrid');
+    const winnerBanner = document.getElementById('winnerBanner');
+    const winnerNameEl = document.getElementById('winnerName');
+    const pickBtn = document.getElementById('pickBtn');
+    const noRepeatToggle = document.getElementById('noRepeatToggle');
+    const voiceBtn = document.getElementById('voiceBtn');
+
+    noRepeatToggle.checked = noRepeatMode;
+    updateVoiceUI();
+
+    function saveData() {
+      localStorage.setItem('7a_disabled_students', JSON.stringify(disabledStudents));
+      localStorage.setItem('7a_no_repeat_mode', JSON.stringify(noRepeatMode));
+      localStorage.setItem('7a_student_scores', JSON.stringify(studentScores));
+      localStorage.setItem('7a_voice_enabled', JSON.stringify(voiceEnabled));
+    }
+
+    function toggleNoRepeat() {
+      noRepeatMode = noRepeatToggle.checked;
+      saveData();
+    }
+
+    function toggleVoice() {
+      voiceEnabled = !voiceEnabled;
+      saveData();
+      updateVoiceUI();
+    }
+
+    function updateVoiceUI() {
+      const voiceIcon = document.getElementById('voiceIcon');
+      if (voiceEnabled) {
+        voiceBtn.innerHTML = `<i class="fa-solid fa-volume-high text-emerald-400"></i><span class="hidden sm:inline">Ovoz: Yoqilgan</span>`;
+      } else {
+        voiceBtn.innerHTML = `<i class="fa-solid fa-volume-xmark text-rose-400"></i><span class="hidden sm:inline">Ovoz: O'chirilgan</span>`;
+      }
+    }
+
+    function speakText(text) {
+      if (!voiceEnabled || !('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'uz-UZ';
+      utterance.rate = 0.9;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function updateAnalytics() {
+      const scores = Object.values(studentScores);
+      const totalScores = scores.reduce((a, b) => a + b, 0);
+      const avg = scores.length > 0 ? (totalScores / scores.length).toFixed(1) : "0.0";
+      document.getElementById('avgScore').textContent = avg;
+
+      document.getElementById('answeredStats').textContent = `${disabledStudents.length} / ${students.length}`;
+
+      // Top student
+      let topName = "-";
+      let maxScore = -1;
+      for (const [name, score] of Object.entries(studentScores)) {
+        if (score > maxScore) {
+          maxScore = score;
+          topName = `${name} (${score} ball)`;
+        }
+      }
+      document.getElementById('topStudent').textContent = topName;
+    }
+
+    function renderStudents() {
+      grid.innerHTML = '';
+      const searchQuery = document.getElementById('searchInput').value.toLowerCase().trim();
+      const sortType = document.getElementById('sortSelect').value;
+
+      let filteredStudents = students.filter(name => name.toLowerCase().includes(searchQuery));
+
+      // Saralash
+      if (sortType === 'score-desc') {
+        filteredStudents.sort((a, b) => (studentScores[b] || 0) - (studentScores[a] || 0));
+      } else if (sortType === 'score-asc') {
+        filteredStudents.sort((a, b) => (studentScores[a] || 0) - (studentScores[b] || 0));
+      } else if (sortType === 'name-asc') {
+        filteredStudents.sort((a, b) => a.localeCompare(b));
+      }
+
+      updateAnalytics();
+
+      filteredStudents.forEach((name) => {
+        const originalIndex = students.indexOf(name);
+        const isDisabled = disabledStudents.includes(name);
+        const score = studentScores[name] !== undefined ? studentScores[name] : null;
+
+        const card = document.createElement('div');
+        card.id = `student-${originalIndex}`;
+        card.onclick = () => openModal(name);
+        card.className = `student-card glass-panel rounded-2xl p-3.5 flex flex-col justify-between transition-all duration-200 cursor-pointer hover:border-slate-600 relative group ${
+          isDisabled ? 'opacity-40 border-slate-800/40 bg-slate-900/20' : 'hover:-translate-y-1'
+        }`;
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between w-full gap-2">
+            <span class="font-semibold text-xs sm:text-sm truncate ${isDisabled ? 'line-through text-slate-500' : 'text-slate-200'}" title="${name}">
+              ${name}
+            </span>
+            ${score !== null ? `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold text-xs px-2 py-0.5 rounded-lg shrink-0">${score}b</span>` : ''}
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function openModal(name) {
+      selectedStudentForModal = name;
+      document.getElementById('modalName').textContent = name;
+      document.getElementById('modalAvatar').textContent = name.charAt(0);
+      
+      const score = studentScores[name] !== undefined ? `${studentScores[name]} ball` : "Baho qo'yilmagan";
+      document.getElementById('modalScore').textContent = score;
+
+      const isDisabled = disabledStudents.includes(name);
+      document.getElementById('modalStatus').textContent = isDisabled ? "Bugun javob berdi" : "Kutmoqda";
+
+      document.getElementById('studentModal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('studentModal').classList.add('hidden');
+    }
+
+    function removeScoreFromModal() {
+      if (selectedStudentForModal) {
+        delete studentScores[selectedStudentForModal];
+        saveData();
+        renderStudents();
+        closeModal();
+      }
+    }
+
+    function setScore(score) {
+      if (!currentWinnerName) return;
+      studentScores[currentWinnerName] = score;
+      saveData();
+      renderStudents();
+      
+      const bannerText = winnerBanner.querySelector('p');
+      bannerText.innerHTML = `🎉 <span class="text-white">${currentWinnerName}</span> ga <span class="text-emerald-400 font-bold">${score} ball</span> saqlandi!`;
+    }
+
+    function resetScores() {
+      if (confirm("Barcha o'quvchilarning ballarini nolga tushirishni xohlaysizmi?")) {
+        studentScores = {};
+        saveData();
+        renderStudents();
+      }
+    }
+
+    function resetDisabled() {
+      disabledStudents = [];
+      saveData();
+      renderStudents();
+    }
+
+    function playBeep() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.value = 480;
+        osc.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.04);
+      } catch (e) {}
+    }
+
+    function pickRandomStudent() {
+      if (pickBtn.disabled) return;
+
+      let activeIndices = [];
+      students.forEach((name, idx) => {
+        if (!noRepeatMode || !disabledStudents.includes(name)) {
+          activeIndices.push(idx);
+        }
+      });
+
+      if (activeIndices.length === 0) {
+        alert("Barcha o'quvchilar javob berib bo'ldi!");
+        return;
+      }
+
+      pickBtn.disabled = true;
+      pickBtn.classList.add('opacity-50', 'cursor-not-allowed');
+      winnerBanner.classList.add('hidden');
+
+      const allCards = document.querySelectorAll('.student-card');
+      allCards.forEach(card => card.classList.remove('active-card', 'selected-winner', 'opacity-20'));
+
+      let step = 0;
+      let speed = 50;
+      const totalSteps = 25 + Math.floor(Math.random() * 10);
+
+      function animate() {
+        allCards.forEach(c => c.classList.remove('active-card'));
+
+        const currentActiveIdx = activeIndices[step % activeIndices.length];
+        const currentCard = document.getElementById(`student-${currentActiveIdx}`);
+
+        if (currentCard) {
+          currentCard.classList.add('active-card');
+          playBeep();
+        }
+
+        step++;
+
+        if (step < totalSteps) {
+          if (step > totalSteps - 8) speed += 55;
+          setTimeout(animate, speed);
+        } else {
+          const winnerIndex = activeIndices[(step - 1) % activeIndices.length];
+          const winnerName = students[winnerIndex];
+          currentWinnerName = winnerName;
+          const winnerCard = document.getElementById(`student-${winnerIndex}`);
+
+          if (winnerCard) {
+            winnerCard.classList.remove('active-card');
+            winnerCard.classList.add('selected-winner');
+          }
+
+          allCards.forEach((c, idx) => {
+            if (idx !== winnerIndex) c.classList.add('opacity-20');
+          });
+
+          winnerNameEl.textContent = winnerName;
+          winnerBanner.querySelector('p').innerHTML = `🎉 Bugungi javob beruvchi: <span id="winnerName" class="font-extrabold text-white text-2xl sm:text-4xl underline ml-2">${winnerName}</span>`;
+          winnerBanner.classList.remove('hidden');
+
+          if (noRepeatMode && !disabledStudents.includes(winnerName)) {
+            disabledStudents.push(winnerName);
+            saveData();
+          }
+
+          // Ovozli aytish
+          speakText(`${winnerName}`);
+
+          confetti({
+            particleCount: 120,
+            spread: 80,
+            origin: { y: 0.6 }
+          });
+
+          pickBtn.disabled = false;
+          pickBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+          renderStudents();
+        }
+      }
+
+      animate();
+    }
+
+    window.addEventListener('keydown', function(e) {
+      if (e.code === 'Space' && !document.getElementById('studentModal').classList.contains('hidden') === false) {
+        e.preventDefault();
+        pickRandomStudent();
+      }
+    });
+
+    renderStudents();
+  </script>
+</body>
+</html>
