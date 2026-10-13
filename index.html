@@ -65,12 +65,6 @@
           <p class="text-xs text-slate-400">Aqlli baholash va tasodifiy tanlov tizimi</p>
         </div>
       </div>
-      
-      <!-- Ovozli o'qish rejimi toggle -->
-      <button onclick="toggleVoice()" id="voiceBtn" class="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700 text-slate-300 transition-all text-xs flex items-center gap-2">
-        <i class="fa-solid fa-volume-high text-emerald-400" id="voiceIcon"></i>
-        <span class="hidden sm:inline">Ovoz: Yoqilgan</span>
-      </button>
     </div>
 
     <!-- Boshqaruv tugmalari va Rejimlar -->
@@ -94,7 +88,7 @@
 
   <main class="max-w-7xl mx-auto px-4 sm:px-8 py-6 flex-grow w-full space-y-6">
 
-    <!-- Analytics / Statistik Metrikalar (Top 3 & Sinf O'rtacha Balli) -->
+    <!-- Analytics / Statistik Metrikalar -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
       <div class="glass-panel p-4 rounded-2xl flex items-center gap-4">
         <div class="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 text-xl shrink-0">
@@ -154,7 +148,6 @@
 
     <!-- Filter va Qidiruv Paneli -->
     <div class="flex flex-col sm:flex-row justify-between items-center gap-3 glass-panel p-3.5 rounded-2xl">
-      <!-- Search Input -->
       <div class="relative w-full sm:w-72">
         <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
         <input 
@@ -166,7 +159,6 @@
         />
       </div>
 
-      <!-- Sort Options -->
       <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
         <span class="text-xs text-slate-400 font-medium hidden sm:inline">Saralash:</span>
         <select id="sortSelect" onchange="renderStudents()" class="bg-slate-900 border border-slate-800 text-xs text-slate-300 rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500">
@@ -180,7 +172,6 @@
 
     <!-- O'quvchilar ro'yxati Grid -->
     <div id="studentsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-      <!-- JS orqali to'ldiriladi -->
     </div>
 
   </main>
@@ -250,7 +241,6 @@
     let disabledStudents = JSON.parse(localStorage.getItem('7a_disabled_students')) || [];
     let noRepeatMode = JSON.parse(localStorage.getItem('7a_no_repeat_mode')) || false;
     let studentScores = JSON.parse(localStorage.getItem('7a_student_scores')) || {};
-    let voiceEnabled = JSON.parse(localStorage.getItem('7a_voice_enabled')) ?? true;
 
     let currentWinnerName = "";
     let selectedStudentForModal = "";
@@ -260,45 +250,18 @@
     const winnerNameEl = document.getElementById('winnerName');
     const pickBtn = document.getElementById('pickBtn');
     const noRepeatToggle = document.getElementById('noRepeatToggle');
-    const voiceBtn = document.getElementById('voiceBtn');
 
     noRepeatToggle.checked = noRepeatMode;
-    updateVoiceUI();
 
     function saveData() {
       localStorage.setItem('7a_disabled_students', JSON.stringify(disabledStudents));
       localStorage.setItem('7a_no_repeat_mode', JSON.stringify(noRepeatMode));
       localStorage.setItem('7a_student_scores', JSON.stringify(studentScores));
-      localStorage.setItem('7a_voice_enabled', JSON.stringify(voiceEnabled));
     }
 
     function toggleNoRepeat() {
       noRepeatMode = noRepeatToggle.checked;
       saveData();
-    }
-
-    function toggleVoice() {
-      voiceEnabled = !voiceEnabled;
-      saveData();
-      updateVoiceUI();
-    }
-
-    function updateVoiceUI() {
-      const voiceIcon = document.getElementById('voiceIcon');
-      if (voiceEnabled) {
-        voiceBtn.innerHTML = `<i class="fa-solid fa-volume-high text-emerald-400"></i><span class="hidden sm:inline">Ovoz: Yoqilgan</span>`;
-      } else {
-        voiceBtn.innerHTML = `<i class="fa-solid fa-volume-xmark text-rose-400"></i><span class="hidden sm:inline">Ovoz: O'chirilgan</span>`;
-      }
-    }
-
-    function speakText(text) {
-      if (!voiceEnabled || !('speechSynthesis' in window)) return;
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'uz-UZ';
-      utterance.rate = 0.9;
-      window.speechSynthesis.speak(utterance);
     }
 
     function updateAnalytics() {
@@ -309,7 +272,6 @@
 
       document.getElementById('answeredStats').textContent = `${disabledStudents.length} / ${students.length}`;
 
-      // Top student
       let topName = "-";
       let maxScore = -1;
       for (const [name, score] of Object.entries(studentScores)) {
@@ -328,7 +290,6 @@
 
       let filteredStudents = students.filter(name => name.toLowerCase().includes(searchQuery));
 
-      // Saralash
       if (sortType === 'score-desc') {
         filteredStudents.sort((a, b) => (studentScores[b] || 0) - (studentScores[a] || 0));
       } else if (sortType === 'score-asc') {
@@ -491,9 +452,6 @@
             disabledStudents.push(winnerName);
             saveData();
           }
-
-          // Ovozli aytish
-          speakText(`${winnerName}`);
 
           confetti({
             particleCount: 120,
